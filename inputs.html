@@ -1,21 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
 <head>
-    <title>HTML Inputs</title>
-    </head>
-<body>
-<form>
-    <label>Notes for inputs</label><br>
-    <input type="text"><br>
-    <input type="submit"><br>
-    <input type="file"><br>
-    <input type="date"><br>
-    <input type="radio"><br>
-    <input type="range"><br>
-    <input type="search"><br>
-    <input type="color">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Today's Schedule Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Gochi+Hand&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-handwriting {
+            font-family: 'Gochi Hand', cursive;
+        }
+        .time-slot {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.2s ease-in-out;
+        }
+        .time-slot:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
 
-</form>
+    <div class="container mx-auto px-4 py-8 md:py-12 max-w-2xl">
+        <header class="text-center mb-8 relative">
+            <h1 class="font-handwriting text-5xl md:text-6xl text-sky-600">Today's Schedule</h1>
+            <p class="text-stone-500 mt-2">Enter your wake up time to generate your daily study plan.</p>
+            <button id="edit-schedule-btn" class="absolute top-0 right-0 p-2 text-stone-500 hover:text-sky-600 transition" title="Edit Schedule">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </header>
+
+        <main>
+            <!-- Input Section -->
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <label for="wakeUpTime" class="text-lg font-medium">Input wake up time:</label>
+                    <input type="text" id="wakeUpTime" placeholder="e.g., 3:30" class="w-full sm:w-32 text-center text-lg px-4 py-2 border border-stone-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition">
+                    <div class="flex rounded-md" role="group">
+                        <button type="button" id="am-btn" class="px-6 py-2 text-lg font-medium text-white bg-sky-600 border border-sky-600 rounded-l-lg hover:bg-sky-700 focus:z-10 focus:ring-2 focus:ring-sky-500">
+                            AM
+                        </button>
+                        <button type="button" id="pm-btn" class="px-6 py-2 text-lg font-medium text-stone-900 bg-white border border-stone-300 rounded-r-lg hover:bg-stone-100 focus:z-10 focus:ring-2 focus:ring-sky-500">
+                            PM
+                        </button>
+                    </div>
+                </div>
+                <div id="error-message" class="text-red-500 text-center mt-3 h-5"></div>
+            </div>
+
+            <!-- Schedule Display Section -->
+            <div id="schedule-container" class="space-y-4">
+                <!-- Schedule items will be dynamically inserted here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Schedule Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center flex-shrink-0">
+                <h2 class="text-2xl font-bold text-stone-800">Edit Schedule</h2>
+                <button id="close-modal-btn" class="text-3xl text-stone-500 hover:text-stone-800 transition">&times;</button>
+            </div>
+            <div id="edit-form-container" class="p-4 space-y-3 overflow-y-auto">
+                <!-- Dynamic form rows will be inserted here -->
+            </div>
+            <div class="p-4 border-t flex-shrink-0">
+                <button id="add-task-btn" class="w-full py-2 px-4 bg-sky-100 text-sky-700 font-semibold rounded-lg hover:bg-sky-200 transition">Add Task</button>
+            </div>
+            <div class="p-4 bg-stone-50 border-t flex justify-end gap-3 flex-shrink-0">
+                <button id="cancel-btn" class="py-2 px-5 bg-white border border-stone-300 rounded-lg hover:bg-stone-100 transition">Cancel</button>
+                <button id="save-btn" class="py-2 px-5 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const wakeUpTimeInput = document.getElementById('wakeUpTime');
+        const amBtn = document.getElementById('am-btn');
+        const pmBtn = document.getElementById('pm-btn');
+        const scheduleContainer = document.getElementById('schedule-container');
+        const errorMessage = document.getElementById('error-message');
+        const editScheduleBtn = document.getElementById('edit-schedule-btn');
+        const editModal = document.getElementById('edit-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const addTaskBtn = document.getElementById('add-task-btn');
+        const editFormContainer = document.getElementById('edit-form-container');
+
+
+        let selectedMeridiem = 'am';
+
+        // Default schedule structure.
+        const defaultSchedule = [
+            { task: 'Morning Routine: Salah + Azkar + Quran + Breakfast', duration: 60 },
+            { task: 'Study Session 1: Sketchy + Anki + FA + Cases', duration: 180 },
+            { task: 'Break', duration: 90 },
+            { task: 'Study Session 2: Sketchy + Anki + FA + Cases', duration: 180 },
+            { task: 'Break', duration: 60 },
+            { task: 'Study Session 3: Listen Shebl 3.5 hours + 1 Sketchy', duration: 210 },
+            { task: 'Break', duration: 60 },
+            { task: 'Study Session 4: Listen Shebl 2.5 hours + 1 Sketchy + Cases', duration: 150 },
+            { task: 'Pre-sleep Routine', duration: 30 },
+            { task: 'Sleep', duration: 420 },
+        ];
+        
+        let scheduleStructure = [];
+
+        /**
+         * Loads the schedule from localStorage or uses the default.
+         */
+        function loadSchedule() {
+            const savedSchedule = localStorage.getItem('dailyScheduler');
+            if (savedSchedule) {
+                scheduleStructure = JSON.parse(savedSchedule);
+            } else {
+                scheduleStructure = [...defaultSchedule];
+            }
+        }
+
+        /**
+         * Toggles the visual state of the AM/PM buttons.
+         * @param {string} newMeridiem - The selected meridiem ('am' or 'pm').
+         */
+        function updateMeridiemSelection(newMeridiem) {
+            selectedMeridiem = newMeridiem;
+            if (newMeridiem === 'am') {
+                amBtn.classList.remove('bg-white', 'text-stone-900', 'border-stone-300');
+                amBtn.classList.add('bg-sky-600', 'text-white', 'border-sky-600');
+                pmBtn.classList.remove('bg-sky-600', 'text-white', 'border-sky-600');
+                pmBtn.classList.add('bg-white', 'text-stone-900', 'border-stone-300');
+            } else {
+                pmBtn.classList.remove('bg-white', 'text-stone-900', 'border-stone-300');
+                pmBtn.classList.add('bg-sky-600', 'text-white', 'border-sky-600');
+                amBtn.classList.remove('bg-sky-600', 'text-white', 'border-sky-600');
+                amBtn.classList.add('bg-white', 'text-stone-900', 'border-stone-300');
+            }
+            generateSchedule();
+        }
+
+        /**
+         * Formats a Date object into a readable time string (e.g., "03:30 AM").
+         * @param {Date} date - The date object to format.
+         * @returns {string} The formatted time string.
+         */
+        function formatTime(date) {
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            return `${hours}:${minutes} ${ampm}`;
+        }
+
+        /**
+         * Validates the time input and generates the schedule.
+         */
+        function generateSchedule() {
+            const timeValue = wakeUpTimeInput.value;
+            const timeRegex = /^([1-9]|1[0-2]):([0-5][0-9])$/;
+            
+            if (!timeRegex.test(timeValue)) {
+                errorMessage.textContent = 'Please enter time in H:MM or HH:MM format (e.g., 7:30 or 12:00).';
+                scheduleContainer.innerHTML = '';
+                return;
+            }
+            
+            errorMessage.textContent = '';
+            scheduleContainer.innerHTML = ''; // Clear previous schedule
+
+            const [inputHours, inputMinutes] = timeValue.split(':').map(Number);
+            let hours24 = inputHours;
+
+            if (selectedMeridiem === 'pm' && inputHours !== 12) {
+                hours24 += 12;
+            } else if (selectedMeridiem === 'am' && inputHours === 12) {
+                hours24 = 0; // Midnight case
+            }
+
+            let currentTime = new Date();
+            currentTime.setHours(hours24, inputMinutes, 0, 0);
+            
+            scheduleStructure.forEach((item, index) => {
+                const startTime = new Date(currentTime);
+                currentTime.setMinutes(currentTime.getMinutes() + item.duration);
+                const endTime = new Date(currentTime);
+
+                const scheduleItem = document.createElement('div');
+                scheduleItem.className = 'time-slot fade-in';
+                scheduleItem.style.animationDelay = `${index * 50}ms`;
+
+                scheduleItem.innerHTML = `
+                    <div class="flex-shrink-0 w-32 md:w-40 text-center">
+                        <p class="font-bold text-sky-600">${formatTime(startTime)}</p>
+                        <p class="text-sm text-stone-500">to</p>
+                        <p class="font-bold text-sky-600">${formatTime(endTime)}</p>
+                    </div>
+                    <div class="border-l-2 border-stone-200 pl-4 ml-4 flex-1">
+                        <p class="font-semibold text-lg">${item.task}</p>
+                    </div>
+                `;
+                scheduleContainer.appendChild(scheduleItem);
+            });
+        }
+
+        /**
+         * Creates a single row for the edit form.
+         * @param {object} taskItem - The task object {task: string, duration: number}.
+         */
+        function createEditRow(taskItem = { task: '', duration: 60 }) {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 p-2 rounded-lg bg-stone-100';
+            
+            const durationInHours = (taskItem.duration / 60).toFixed(2);
+
+            row.innerHTML = `
+                <input type="text" value="${taskItem.task}" placeholder="Task Description" class="flex-grow p-2 border border-stone-300 rounded-md focus:ring-2 focus:ring-sky-500">
+                <input type="number" value="${durationInHours}" step="0.1" min="0" placeholder="Hours" class="w-24 p-2 border border-stone-300 rounded-md focus:ring-2 focus:ring-sky-500">
+                <button class="remove-task-btn p-2 text-red-500 hover:bg-red-100 rounded-full transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            `;
+            row.querySelector('.remove-task-btn').addEventListener('click', () => row.remove());
+            editFormContainer.appendChild(row);
+        }
+        
+        /**
+         * Populates the edit form with the current schedule structure.
+         */
+        function populateEditForm() {
+            editFormContainer.innerHTML = '';
+            scheduleStructure.forEach(createEditRow);
+        }
+
+        /**
+         * Saves the changes from the edit form to the schedule structure and localStorage.
+         */
+        function saveScheduleChanges() {
+            const newSchedule = [];
+            const rows = editFormContainer.querySelectorAll('.flex.items-center.gap-2');
+            rows.forEach(row => {
+                const taskInput = row.querySelector('input[type="text"]');
+                const durationInput = row.querySelector('input[type="number"]');
+                const task = taskInput.value.trim();
+                const durationInHours = parseFloat(durationInput.value) || 0;
+
+                if (task) {
+                    newSchedule.push({
+                        task: task,
+                        duration: Math.round(durationInHours * 60)
+                    });
+                }
+            });
+            scheduleStructure = newSchedule;
+            localStorage.setItem('dailyScheduler', JSON.stringify(scheduleStructure));
+            closeModal();
+            generateSchedule();
+        }
+
+        function openModal() {
+            populateEditForm();
+            editModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            editModal.classList.add('hidden');
+        }
+
+        // --- Event Listeners ---
+        amBtn.addEventListener('click', () => updateMeridiemSelection('am'));
+        pmBtn.addEventListener('click', () => updateMeridiemSelection('pm'));
+        wakeUpTimeInput.addEventListener('input', generateSchedule);
+        
+        // Modal listeners
+        editScheduleBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        saveBtn.addEventListener('click', saveScheduleChanges);
+        addTaskBtn.addEventListener('click', () => createEditRow());
+
+
+        // --- Initial Load ---
+        function init() {
+            loadSchedule();
+            wakeUpTimeInput.value = '3:30';
+            generateSchedule();
+        }
+
+        init();
+
+    </script>
 </body>
 </html>
+
